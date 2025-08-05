@@ -1,151 +1,198 @@
-# AI-Powered Invoice and Document Processor
+Of course. Here is a complete `README.md` file that covers the entire process you went through, from local setup to deploying on Reasoning Engines and connecting it to the Agent Builder. This will be a perfect guide for your project.
 
-This project provides a simple yet powerful command-line application for processing procurement documents. It uses Google's Gemini Pro 1.5 model to extract structured data from a PDF invoice and a corresponding PDF Jira ticket. The extracted data is then enriched using information from a master data Excel file and outputted in both JSON and CSV formats.
+-----
 
-The script is designed for easy setup and use, automatically creating dummy input files if they don't exist, allowing you to test the pipeline immediately.
+# AI-Powered Invoice Processor on Google Cloud
 
-## Features
+This project demonstrates an end-to-end workflow for building, deploying, and interacting with a custom AI agent on Google Cloud. The agent is designed to process procurement documents (PDF invoices and Jira tickets), extract structured data using a Gemini model, enrich it with master data from an Excel file, and return the final result in JSON and CSV formats.
 
-  - **Direct Google AI Integration**: Uses the `google-generativeai` Python SDK directly, with no complex Agent Development Kit (ADK) required.
-  - **Multi-Document Processing**: Simultaneously analyzes a PDF invoice and a PDF Jira ticket.
-  - **Master Data Enrichment**: Cross-references a master data Excel file to look up critical information like GL Accounts, Tax Codes, and Requestor IDs.
-  - **Structured Output**: Generates clean, structured output in both JSON and CSV formats, ready for downstream systems.
-  - **Automatic File Generation**: Creates dummy `invoice.pdf`, `jira.pdf`, and `master_data.xlsx` files on the first run for quick and easy testing.
-  - **Secure API Key Management**: Uses a `.env` file to securely manage your Google API key.
+The core of the project is a Python class deployed as a **Vertex AI Reasoning Engine**, which is then linked as a tool to a conversational **Vertex AI Agent Builder** application.
+
+## Project Workflow
+
+1.  **Local Development:** A Python class (`SimpleInvoiceProcessor`) encapsulates all the logic for file processing and calling the Gemini model.
+2.  **Local Testing:** A `main.py` script allows for rapid local testing of the agent's logic before deployment.
+3.  **Deployment:** A `deploy.py` script packages the Python code and deploys it as a secure, scalable Reasoning Engine on Vertex AI.
+4.  **Integration:** A `cURL` command links the deployed Reasoning Engine as a custom tool to a conversational app in Agent Builder.
+5.  **Interaction:** A final `interact_with_assistant.py` script shows how to call the fully integrated system, passing file data and receiving the processed output.
 
 ## Project Structure
 
 ```
 invoice_agent_project/
 ├── data/
-│   ├── invoice.pdf          # Your invoice PDF (or auto-generated dummy)
-│   ├── jira.pdf             # Your Jira ticket PDF (or auto-generated dummy)
-│   └── master_data.xlsx     # Your master data file (or auto-generated dummy)
+│   ├── invoice.pdf
+│   ├── jira.pdf
+│   └── master_data.xlsx
 ├── multi_tool_agent/
-│   ├── __init__.py          # Makes the agent a callable package
-│   ├── agent.py             # Core logic for the AI agent and document processing
-│   └── .env                 # Your environment variables (e.g., API Key)
-├── main.py                  # Main entry point to run the application
-└── requirements.txt         # List of Python dependencies
+│   ├── __init__.py
+│   └── agent.py
+├── .env
+├── .gitignore
+├── deploy.py
+├── main.py
+├── query_agent.py
+├
+└── requirements.txt
 ```
 
-## Setup and Installation
+-----
 
-Follow these steps to get the project up and running on your local machine.
+## 1\. Local Setup and Testing
 
-### 1\. Prerequisites
+Before deploying, test the agent's logic on your local machine.
 
-  - Python 3.8 or higher
-  - A Google AI Studio API Key. You can get one from [Google AI Studio](https://aistudio.google.com/).
+### Prerequisites
 
-### 2\. Clone the Repository
+  * Python 3.9+
+  * A Google Cloud Project
+  * Authenticated `gcloud` CLI (`gcloud auth application-default login`)
 
-Clone this project to your local machine.
+### Setup Steps
 
-```bash
-git clone <your-repository-url>
-cd invoice_agent_project
-```
+1.  **Clone the Repository** and navigate into the project directory.
 
-### 3\. Set up a Virtual Environment (Recommended)
+2.  **Create and Activate a Virtual Environment:**
 
-It's best practice to create a virtual environment to manage project dependencies.
+    ```bash
+    python -m venv venv
+    source venv/bin/activate
+    # On Windows: .\venv\Scripts\activate
+    ```
 
-```bash
-# For macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
+3.  **Install Dependencies:**
 
-# For Windows
-python -m venv venv
-.\venv\Scripts\activate
-```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-### 4\. Install Dependencies
+4.  **Create Environment File for Local Testing:**
+    Create a file named `.env` in the project root. The `main.py` script uses this to load your API key for local tests.
 
-Install all the required Python packages using the `requirements.txt` file.
+    ```
+    # .env
+    GOOGLE_API_KEY="your-google-ai-studio-api-key"
+    ```
 
-```bash
-pip install -r requirements.txt
-```
+5.  **Run the Local Test:**
+    Execute the `main.py` script. It will create dummy files in the `data/` folder if they don't exist and run the full processing logic locally.
 
-### 5\. Configure Your Environment File
+    ```bash
+    python main.py
+    ```
 
-You need to provide your Google API key.
+    If this runs successfully, your agent's code is correct.
 
-1.  Navigate to the `multi_tool_agent/` directory.
-2.  Create a file named `.env`.
-3.  Add your API key to the file as shown below:
+-----
 
-**File: `multi_tool_agent/.env`**
+## 2\. Deployment to Vertex AI Reasoning Engine
 
-```
-GOOGLE_API_KEY=YOUR_ACTUAL_API_KEY_HERE
-```
+Deploy the agent to a secure, scalable environment.
 
-Replace `YOUR_ACTUAL_API_KEY_HERE` with the key you obtained from Google AI Studio.
+### Cloud Prerequisites
 
-## Usage
+1.  **Enable APIs:**
+    ```bash
+    gcloud services enable aiplatform.googleapis.com discoveryengine.googleapis.com
+    ```
+2.  **Create a Cloud Storage Bucket:** This is used for staging deployment files.
+    ```bash
+    # Replace with your own unique bucket name
+    gsutil mb -p your-gcp-project-id -l us-central1 gs://your-unique-staging-bucket
+    ```
 
-Once the setup is complete, you can run the application from the project's root directory.
+### Deployment Steps
 
-### Running the Application
+1.  **Update Your `.env` file:**
+    Add your Google Cloud project details to the `.env` file. The `deploy.py` script needs these.
 
-Execute the `main.py` script from your terminal:
+    ```
+    # .env
+    GOOGLE_API_KEY="your-google-ai-studio-api-key"
+    GOOGLE_CLOUD_PROJECT="sadproject2025"
+    GOOGLE_CLOUD_LOCATION="us-central1"
+    STAGING_BUCKET="gs://your-unique-staging-bucket"
+    ```
 
-```bash
-python main.py
-```
+2.  **Run the Deployment Script:**
+    This script packages your `multi_tool_agent` code and deploys it. It uses native IAM authentication, so no API key is needed on the server.
 
-### What Happens on the First Run?
+    ```bash
+    python deploy.py
+    ```
 
-  - The script will check for the existence of `invoice.pdf`, `jira.pdf`, and `master_data.xlsx` in the `data/` directory.
-  - If any of these files are missing, it will automatically create simple, dummy versions of them. This allows you to test the end-to-end flow without needing to provide your own files initially.
+3.  **Save the Resource Name:**
+    Upon successful completion, the script will print the full resource name of your deployed agent. **Copy this name.** You will need it for the next step.
+    `📋 New Resource name: projects/113207776071/locations/us-central1/reasoningEngines/5553140650687332352`
 
-### Using Your Own Files
+-----
 
-To process your own documents, simply replace the dummy files in the `data/` directory with your actual files, ensuring they have the same names:
+## 3\. Connecting to Agent Builder
 
-  - `data/invoice.pdf`
-  - `data/jira.pdf`
-  - `data/master_data.xlsx`
+Link your deployed backend engine to a conversational frontend app.
 
-### Expected Output
+### Setup Steps
 
-After a successful run, the script will print the following to your console:
+1.  **Create an Agent Builder App:**
 
-1.  **Final JSON Data**: The structured data extracted and enriched by the AI.
-2.  **Final CSV Data**: The same data formatted as a CSV string.
-3.  **Raw AI Response**: The complete, unparsed text response from the Gemini model for debugging purposes.
+      * Navigate to **Vertex AI -\> Agent Builder** in the Google Cloud Console.
+      * Click **"+ Create a new app"** and choose the **Chat** type.
+      * Give it a name (e.g., "Invoice Assistant") and complete the setup.
 
-Example Output:
+2.  **Find Your App ID:**
 
-````
-==================== PROCESSING RESULTS ====================
+      * From the Agent Builder "Apps" page, find your newly created app in the list.
+      * Copy the value from the **ID** column. This is your App ID (e.g., `invoice-data-extraction-se_1754424308927`).
 
---- Final JSON Data ---
-{
-  "Document Type": "ZNID",
-  "PO Number": "PO-2025-12345",
-  "Line Item Number": "10",
-  ...
-}
+3.  **Grant IAM Permissions:**
+    The Agent Builder service needs permission to call your Reasoning Engine.
 
---- Final CSV Data ---
-Document Type,PO Number,Line Item Number,...
-ZNID,PO-2025-12345,10,...
+      * Navigate to the **IAM & Admin** page in the Cloud Console.
+      * Click **+ GRANT ACCESS**.
+      * In "New principals", add the service account: `service-<YOUR_PROJECT_NUMBER>@gcp-sa-discoveryengine.iam.gserviceaccount.com`.
+      * Assign the **`Vertex AI User`** role.
+      * Click **SAVE**.
 
---- Raw AI Response ---
-```json
-{
-  "Document Type": "ZNID",
-  "PO Number": "PO-2025-12345",
-  "Line Item Number": "10",
-  ...
-}
-````
+4.  **Link the Services with `cURL`:**
+    Run the following command in your terminal. Replace `PASTE_YOUR_APP_ID_HERE` with the ID you copied.
 
-\============================================================
+    ```bash
+    curl -X POST \
+         -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+         -H "Content-Type: application/json" \
+         -H "X-Goog-User-Project: sadproject2025" \
+         "https://discoveryengine.googleapis.com/v1alpha/projects/sadproject2025/locations/global/collections/default_collection/engines/PASTE_YOUR_APP_ID_HERE/assistants/default_assistant/agents" \
+         -d '{
+              "displayName": "Invoice and Jira Processor",
+              "description": "An agent that processes invoice and Jira PDFs using master data via a Reasoning Engine.",
+              "adk_agent_definition": {
+                "provisioned_reasoning_engine": {
+                  "reasoning_engine": "projects/113207776071/locations/us-central1/reasoningEngines/5553140650687332352"
+                }
+              }
+            }'
+    ```
 
-```
-```
+    A successful response will show `"state": "ENABLED"`.
+
+-----
+
+## 4\. Interacting with the Final Deployed Assistant
+
+Call your fully integrated system using the Agent Builder API.
+
+1.  **Install the Client Library:**
+
+    ```bash
+    pip install google-cloud-discoveryengine
+    ```
+
+2.  **Run the Interaction Script:**
+    The `interact_with_assistant.py` script is pre-configured to load your local files, encode them, and send them as parameters to your deployed assistant.
+
+    ```bash
+    python interact_with_assistant.py
+    ```
+
+3.  **View the Output:**
+    The script will print the final, processed JSON data returned by your custom Reasoning Engine, completing the end-to-end workflow.
