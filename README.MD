@@ -1,6 +1,3 @@
-Of course. Here is a complete `README.md` file that covers the entire process you went through, from local setup to deploying on Reasoning Engines and connecting it to the Agent Builder. This will be a perfect guide for your project.
-
------
 
 # AI-Powered Invoice Processor on Google Cloud
 
