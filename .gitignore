@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+# Add your virtual environment's name here if it's different
+venv/
+.venv/
+env/
+.env/
+
+# Environment Variables
+# IMPORTANT: Never commit secret keys or credentials!
+# This specifically targets the .env file within the agent directory.
+multi_tool_agent/.env
+.env.*
+
+# Data Files
+# Ignore user-provided or auto-generated data files.
+# The structure should be maintained, but not the content.
+data/
+
+# IDE and Editor-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Distribution / packaging / testing
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
