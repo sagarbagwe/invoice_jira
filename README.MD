@@ -174,22 +174,3 @@ Link your deployed backend engine to a conversational frontend app.
 
 -----
 
-## 4\. Interacting with the Final Deployed Assistant
-
-Call your fully integrated system using the Agent Builder API.
-
-1.  **Install the Client Library:**
-
-    ```bash
-    pip install google-cloud-discoveryengine
-    ```
-
-2.  **Run the Interaction Script:**
-    The `interact_with_assistant.py` script is pre-configured to load your local files, encode them, and send them as parameters to your deployed assistant.
-
-    ```bash
-    python interact_with_assistant.py
-    ```
-
-3.  **View the Output:**
-    The script will print the final, processed JSON data returned by your custom Reasoning Engine, completing the end-to-end workflow.
